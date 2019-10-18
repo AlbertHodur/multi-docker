@@ -1,0 +1,37 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t alberthodur/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true alberthodur/react-test npm test
+
+after_success:
+  - docker build -t alberthodur/multi-client ./client
+  - docker build -t alberthodur/multi-nginx ./nginx
+  - docker build -t alberthodur/multi-server ./server
+  - docker build -t alberthodur/multi-worker ./worker
+  # Log-in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # NOW push all the images to DockerHub
+  - docker push alberthodur/multi-client
+  - docker push alberthodur/multi-nginx
+  - docker push alberthodur/multi-server
+  - docker push alberthodur/multi-worker
+
+
+#deploy:
+#  provider: elasticbeanstalk
+#  region: "eu-central-1"
+#  app: "docker-react"
+#  env: "DockerReact-env"
+#  bucket_name:  "elasticbeanstalk-eu-central-1-610391784813"
+#  bucket_path: "docker-react"
+#  on:
+#    branch: master
+#  access_key_id:
+#    secure: $AWS_ACCESS_KEY_ID
+#  secret_access_key:
+#    secure: "$AWS_SECRET_KEY"
